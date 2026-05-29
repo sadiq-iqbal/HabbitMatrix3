@@ -1,6 +1,7 @@
 import express from 'express';
 import cors from 'cors';
 import { connectDb } from './db.js';
+import authRouter from './routes/auth.js';
 import habitsRouter from './routes/habits.js';
 import entriesRouter from './routes/entries.js';
 import settingsRouter from './routes/settings.js';
@@ -12,6 +13,7 @@ const PORT = 3001;
 app.use(cors({ origin: 'http://localhost:5000' }));
 app.use(express.json());
 
+app.use('/api/auth', authRouter);
 app.use('/api/habits', habitsRouter);
 app.use('/api/entries', entriesRouter);
 app.use('/api/settings', settingsRouter);

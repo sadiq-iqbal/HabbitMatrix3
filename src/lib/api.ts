@@ -1,15 +1,20 @@
 import type { Habit, HabitEntry, Settings, FrequencyConfig, StorageSchema } from '@/types/types';
+import { getToken } from '@/store/authStore';
 
 const BASE = '/api';
 
 async function request<T>(path: string, options?: RequestInit): Promise<T> {
+    const token = getToken();
     const res = await fetch(`${BASE}${path}`, {
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+            'Content-Type': 'application/json',
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
         ...options,
     });
     if (!res.ok) {
-        const text = await res.text();
-        throw new Error(`API ${options?.method ?? 'GET'} ${path} failed (${res.status}): ${text}`);
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.error ?? `API ${options?.method ?? 'GET'} ${path} failed (${res.status})`);
     }
     return res.json() as Promise<T>;
 }

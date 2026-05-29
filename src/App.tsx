@@ -1,8 +1,10 @@
 import { useEffect } from 'react';
 import { useHabitStore } from '@/store/habitStore';
+import { useAuthStore } from '@/store/authStore';
 import Sidebar from '@/components/Sidebar';
 import HabitGrid from '@/components/grid/HabitGrid';
 import AnalyticsDashboard from '@/components/analytics/AnalyticsDashboard';
+import AuthPage from '@/components/auth/AuthPage';
 
 export default function App() {
     const theme = useHabitStore((s) => s.settings.theme);
@@ -11,14 +13,44 @@ export default function App() {
     const error = useHabitStore((s) => s.error);
     const init = useHabitStore((s) => s.init);
 
+    const { user, authLoading, token, initAuth } = useAuthStore();
+
+    // 1. Check stored JWT on mount
     useEffect(() => {
-        init();
-    }, [init]);
+        initAuth();
+    }, [initAuth]);
+
+    // 2. Once authenticated, load habit data from server
+    useEffect(() => {
+        if (user && token) {
+            init();
+        }
+    }, [user, token, init]);
 
     useEffect(() => {
         document.documentElement.classList.toggle('dark', theme === 'dark');
     }, [theme]);
 
+    // ── Auth loading ──
+    if (authLoading) {
+        return (
+            <div
+                className="flex h-screen w-screen items-center justify-center"
+                style={{ backgroundColor: 'var(--bg-app)' }}
+            >
+                <div className="flex flex-col items-center gap-3">
+                    <div className="h-8 w-8 animate-spin rounded-full border-4 border-indigo-500 border-t-transparent" />
+                </div>
+            </div>
+        );
+    }
+
+    // ── Not authenticated ──
+    if (!user) {
+        return <AuthPage />;
+    }
+
+    // ── Data loading ──
     if (loading) {
         return (
             <div

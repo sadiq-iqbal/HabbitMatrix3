@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useHabitStore } from '@/store/habitStore';
+import { useAuthStore } from '@/store/authStore';
 import { exportAsJSON, exportAsCSV } from '@/lib/storage';
 import { entriesToCSV } from '@/lib/utils';
 import HabitModal from '@/components/modals/HabitModal';
@@ -13,12 +14,14 @@ import {
     Download,
     Upload,
     Layers,
+    LogOut,
 } from 'lucide-react';
 
 export default function Sidebar() {
     const [showAddModal, setShowAddModal] = useState(false);
     const [showImportModal, setShowImportModal] = useState(false);
 
+    const { user, logout } = useAuthStore();
     const viewMode = useHabitStore((s) => s.viewMode);
     const setViewMode = useHabitStore((s) => s.setViewMode);
     const theme = useHabitStore((s) => s.settings.theme);

@@ -1,11 +1,13 @@
 import { Router } from 'express';
 import { Entry } from '../db.js';
+import { requireAuth } from '../middleware/auth.js';
 
 const router = Router();
+router.use(requireAuth);
 
 // GET /api/entries?habitId=&startDate=&endDate=
 router.get('/', async (req, res) => {
-    const filter = {};
+    const filter = { userId: req.userId };
     if (req.query.habitId) filter.habitId = req.query.habitId;
     if (req.query.startDate || req.query.endDate) {
         filter.date = {};
@@ -23,14 +25,14 @@ router.post('/toggle', async (req, res) => {
         return res.status(400).json({ error: 'habitId and date are required' });
     }
 
-    const existing = await Entry.findOne({ habitId, date });
+    const existing = await Entry.findOne({ habitId, date, userId: req.userId });
     let entry;
     if (existing) {
         existing.completed = !existing.completed;
         await existing.save();
         entry = existing.toObject();
     } else {
-        const created = await Entry.create({ habitId, date, completed: true });
+        const created = await Entry.create({ habitId, date, completed: true, userId: req.userId });
         entry = created.toObject();
     }
 

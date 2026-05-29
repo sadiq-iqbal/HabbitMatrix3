@@ -29,6 +29,7 @@ const frequencySchema = new mongoose.Schema(
 
 const habitSchema = new mongoose.Schema({
     id: { type: String, required: true, unique: true },
+    userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
     name: { type: String, required: true },
     createdAt: { type: String, required: true },
     archived: { type: Boolean, default: false },
@@ -38,13 +39,14 @@ const habitSchema = new mongoose.Schema({
 
 const entrySchema = new mongoose.Schema({
     habitId: { type: String, required: true },
+    userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
     date: { type: String, required: true },
     completed: { type: Boolean, default: false },
 });
-entrySchema.index({ habitId: 1, date: 1 }, { unique: true });
+entrySchema.index({ habitId: 1, date: 1, userId: 1 }, { unique: true });
 
 const settingsSchema = new mongoose.Schema({
-    _singleton: { type: String, default: 'settings', unique: true },
+    userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true, unique: true },
     theme: { type: String, enum: ['light', 'dark'], default: 'light' },
     startDate: { type: String, required: true },
     endDate: { type: String, required: true },
