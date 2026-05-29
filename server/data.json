@@ -1,0 +1,21 @@
+{
+  "version": 1,
+  "habits": [
+    {
+      "id": "42znsh97mprah717",
+      "name": "hhl",
+      "createdAt": "2026-05-29T19:02:33.691Z",
+      "archived": false,
+      "frequency": {
+        "type": "daily"
+      },
+      "color": "#8b5cf6"
+    }
+  ],
+  "entries": [],
+  "settings": {
+    "theme": "light",
+    "startDate": "2026-05-16",
+    "endDate": "2026-05-29"
+  }
+}
