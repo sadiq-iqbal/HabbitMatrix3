@@ -39,8 +39,8 @@ const GridCell = memo(function GridCell({
                 style={{
                     borderColor: 'var(--border-default)',
                     backgroundColor: 'var(--border-subtle)',
-                    width: '56px',
-                    minWidth: '56px',
+                    width: '40px',
+                    minWidth: '40px',
                 }}
             >
                 <div className="w-full h-9 flex items-center justify-center">
@@ -60,8 +60,8 @@ const GridCell = memo(function GridCell({
             className="border-b text-center cursor-pointer transition-all duration-150"
             style={{
                 borderColor: 'var(--border-default)',
-                width: '56px',
-                minWidth: '56px',
+                width: '40px',
+                minWidth: '40px',
                 outline: focused ? `2px solid var(--border-focus)` : 'none',
                 outlineOffset: '-2px',
             }}

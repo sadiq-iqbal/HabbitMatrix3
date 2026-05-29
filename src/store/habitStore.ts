@@ -8,7 +8,7 @@ import type {
 } from '@/types/types';
 import { habitsApi, entriesApi, settingsApi, dataApi } from '@/lib/api';
 import { getDefaultState } from '@/lib/storage';
-import { format, subDays } from 'date-fns';
+import { format, addDays } from 'date-fns';
 
 interface HabitStore {
     // ── State ──
@@ -198,8 +198,8 @@ export const useHabitStore = create<HabitStore>((set, get) => ({
     importData: async (habits, entries, settings) => {
         const defaultSettings: Settings = {
             theme: 'light',
-            startDate: format(subDays(new Date(), 13), 'yyyy-MM-dd'),
-            endDate: format(new Date(), 'yyyy-MM-dd'),
+            startDate: format(new Date(), 'yyyy-MM-dd'),
+            endDate: format(addDays(new Date(), 29), 'yyyy-MM-dd'),
         };
         const resolvedSettings = settings ?? defaultSettings;
         await dataApi.import(habits, entries, resolvedSettings);
@@ -209,8 +209,8 @@ export const useHabitStore = create<HabitStore>((set, get) => ({
     clearAllData: async () => {
         const defaultSettings: Settings = {
             theme: 'light',
-            startDate: format(subDays(new Date(), 13), 'yyyy-MM-dd'),
-            endDate: format(new Date(), 'yyyy-MM-dd'),
+            startDate: format(new Date(), 'yyyy-MM-dd'),
+            endDate: format(addDays(new Date(), 29), 'yyyy-MM-dd'),
         };
         await dataApi.clear();
         set({ habits: [], entries: [], settings: defaultSettings });

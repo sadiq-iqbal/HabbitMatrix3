@@ -1,4 +1,4 @@
-import { format, subDays } from 'date-fns';
+import { format, addDays } from 'date-fns';
 import type { StorageSchema, Settings } from '@/types/types';
 import { storageSchema } from './schemas';
 
@@ -10,8 +10,8 @@ const CURRENT_VERSION = 1;
  */
 export function getDefaultState(): StorageSchema {
     const today = new Date();
-    const startDate = format(subDays(today, 13), 'yyyy-MM-dd');
-    const endDate = format(today, 'yyyy-MM-dd');
+    const startDate = format(today, 'yyyy-MM-dd');
+    const endDate = format(addDays(today, 29), 'yyyy-MM-dd');
 
     return {
         version: CURRENT_VERSION,

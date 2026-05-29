@@ -27,8 +27,8 @@ export default function DateNavigator() {
 
     const handleToday = () => {
         const today = new Date();
-        const newEnd = format(today, 'yyyy-MM-dd');
-        const newStart = format(subDays(today, rangeLength - 1), 'yyyy-MM-dd');
+        const newStart = format(today, 'yyyy-MM-dd');
+        const newEnd = format(addDays(today, rangeLength - 1), 'yyyy-MM-dd');
         setDateRange(newStart, newEnd);
     };
 

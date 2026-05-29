@@ -59,6 +59,18 @@ export function formatDateWithDay(dateStr: string): string {
 }
 
 /**
+ * Format a date string to compact format for grid column headers (e.g., "19\nFeb")
+ */
+export function formatDateCompact(dateStr: string): { day: string; weekday: string; month: string } {
+    const d = parseISO(dateStr);
+    return {
+        day: format(d, 'd'),
+        weekday: format(d, 'EEE'),
+        month: format(d, 'MMM'),
+    };
+}
+
+/**
  * Get today's date as ISO string (YYYY-MM-DD)
  */
 export function getToday(): string {
