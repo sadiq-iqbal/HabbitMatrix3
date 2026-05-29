@@ -196,6 +196,31 @@ export default function Sidebar() {
                             </>
                         )}
                     </button>
+
+                    {/* User + Logout */}
+                    <div
+                        className="mt-1 pt-2 border-t flex items-center gap-2"
+                        style={{ borderColor: 'var(--border-default)' }}
+                    >
+                        <div className="flex-1 min-w-0">
+                            <p className="text-xs font-medium truncate" style={{ color: 'var(--text-secondary)' }}>
+                                {user?.name || user?.email}
+                            </p>
+                            {user?.name && (
+                                <p className="text-[10px] truncate" style={{ color: 'var(--text-muted)' }}>
+                                    {user.email}
+                                </p>
+                            )}
+                        </div>
+                        <button
+                            onClick={logout}
+                            title="Sign out"
+                            className="p-1.5 rounded-lg transition-colors cursor-pointer hover:opacity-80 shrink-0"
+                            style={{ color: 'var(--text-muted)' }}
+                        >
+                            <LogOut className="w-3.5 h-3.5" />
+                        </button>
+                    </div>
                 </div>
             </aside>
 
