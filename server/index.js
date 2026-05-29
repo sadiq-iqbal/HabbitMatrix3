@@ -1,5 +1,6 @@
 import express from 'express';
 import cors from 'cors';
+import { connectDb } from './db.js';
 import habitsRouter from './routes/habits.js';
 import entriesRouter from './routes/entries.js';
 import settingsRouter from './routes/settings.js';
@@ -18,6 +19,8 @@ app.use('/api/data', dataRouter);
 
 app.get('/api/health', (_req, res) => res.json({ status: 'ok' }));
 
-app.listen(PORT, 'localhost', () => {
-    console.log(`[server] Express API running at http://localhost:${PORT}`);
+connectDb().then(() => {
+    app.listen(PORT, 'localhost', () => {
+        console.log(`[server] Express API running at http://localhost:${PORT}`);
+    });
 });

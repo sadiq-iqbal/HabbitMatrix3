@@ -1,48 +1,41 @@
 import { Router } from 'express';
-import { readDb, writeDb } from '../db.js';
+import { Entry } from '../db.js';
 
 const router = Router();
 
-// GET /api/entries?startDate=&endDate=&habitId=
-router.get('/', (req, res) => {
-    const db = readDb();
-    let entries = db.entries;
-
-    if (req.query.habitId) {
-        entries = entries.filter((e) => e.habitId === req.query.habitId);
+// GET /api/entries?habitId=&startDate=&endDate=
+router.get('/', async (req, res) => {
+    const filter = {};
+    if (req.query.habitId) filter.habitId = req.query.habitId;
+    if (req.query.startDate || req.query.endDate) {
+        filter.date = {};
+        if (req.query.startDate) filter.date.$gte = req.query.startDate;
+        if (req.query.endDate) filter.date.$lte = req.query.endDate;
     }
-    if (req.query.startDate) {
-        entries = entries.filter((e) => e.date >= req.query.startDate);
-    }
-    if (req.query.endDate) {
-        entries = entries.filter((e) => e.date <= req.query.endDate);
-    }
-
+    const entries = await Entry.find(filter, '-_id -__v').lean();
     res.json(entries);
 });
 
 // POST /api/entries/toggle  { habitId, date }
-router.post('/toggle', (req, res) => {
+router.post('/toggle', async (req, res) => {
     const { habitId, date } = req.body;
     if (!habitId || !date) {
         return res.status(400).json({ error: 'habitId and date are required' });
     }
 
-    const db = readDb();
-    const idx = db.entries.findIndex(
-        (e) => e.habitId === habitId && e.date === date
-    );
-
+    const existing = await Entry.findOne({ habitId, date });
     let entry;
-    if (idx !== -1) {
-        db.entries[idx] = { ...db.entries[idx], completed: !db.entries[idx].completed };
-        entry = db.entries[idx];
+    if (existing) {
+        existing.completed = !existing.completed;
+        await existing.save();
+        entry = existing.toObject();
     } else {
-        entry = { habitId, date, completed: true };
-        db.entries.push(entry);
+        const created = await Entry.create({ habitId, date, completed: true });
+        entry = created.toObject();
     }
 
-    writeDb(db);
+    delete entry._id;
+    delete entry.__v;
     res.json(entry);
 });
 

@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { readDb, writeDb } from '../db.js';
+import { Habit, Entry } from '../db.js';
 
 const router = Router();
 
@@ -17,53 +17,49 @@ function getRandomColor() {
 }
 
 // GET /api/habits
-router.get('/', (req, res) => {
-    const db = readDb();
-    res.json(db.habits);
+router.get('/', async (_req, res) => {
+    const habits = await Habit.find({}, '-_id -__v').lean();
+    res.json(habits);
 });
 
 // POST /api/habits
-router.post('/', (req, res) => {
+router.post('/', async (req, res) => {
     const { name, frequency } = req.body;
     if (!name || !frequency) {
         return res.status(400).json({ error: 'name and frequency are required' });
     }
-    const db = readDb();
-    const habit = {
+    const habit = await Habit.create({
         id: generateId(),
         name: name.trim(),
         createdAt: new Date().toISOString(),
         archived: false,
         frequency,
         color: getRandomColor(),
-    };
-    db.habits.push(habit);
-    writeDb(db);
-    res.status(201).json(habit);
+    });
+    const plain = habit.toObject();
+    delete plain._id;
+    delete plain.__v;
+    res.status(201).json(plain);
 });
 
 // PUT /api/habits/:id
-router.put('/:id', (req, res) => {
+router.put('/:id', async (req, res) => {
     const { id } = req.params;
-    const db = readDb();
-    const idx = db.habits.findIndex((h) => h.id === id);
-    if (idx === -1) return res.status(404).json({ error: 'Habit not found' });
-
-    db.habits[idx] = { ...db.habits[idx], ...req.body, id };
-    writeDb(db);
-    res.json(db.habits[idx]);
+    const updated = await Habit.findOneAndUpdate(
+        { id },
+        { $set: req.body },
+        { new: true, projection: '-_id -__v' }
+    ).lean();
+    if (!updated) return res.status(404).json({ error: 'Habit not found' });
+    res.json(updated);
 });
 
 // DELETE /api/habits/:id
-router.delete('/:id', (req, res) => {
+router.delete('/:id', async (req, res) => {
     const { id } = req.params;
-    const db = readDb();
-    const exists = db.habits.some((h) => h.id === id);
-    if (!exists) return res.status(404).json({ error: 'Habit not found' });
-
-    db.habits = db.habits.filter((h) => h.id !== id);
-    db.entries = db.entries.filter((e) => e.habitId !== id);
-    writeDb(db);
+    const result = await Habit.deleteOne({ id });
+    if (result.deletedCount === 0) return res.status(404).json({ error: 'Habit not found' });
+    await Entry.deleteMany({ habitId: id });
     res.json({ success: true });
 });
 
