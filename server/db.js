@@ -11,6 +11,18 @@ export async function connectDb() {
     try {
         await mongoose.connect(MONGODB_URI, { dbName: 'habitmatrix' });
         console.log('[server] Connected to MongoDB');
+        
+        // Clean up old singleton index if it exists
+        try {
+            const settingsCollection = mongoose.connection.collection('settings');
+            await settingsCollection.dropIndex('_singleton_1');
+            console.log('[server] Dropped old _singleton index from settings collection');
+        } catch (err) {
+            // Index doesn't exist, which is fine
+            if (err.code !== 27) {
+                console.log('[server] No old _singleton index to clean up');
+            }
+        }
     } catch (err) {
         console.error('[server] MongoDB connection error:', err.message);
         process.exit(1);
