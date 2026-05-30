@@ -1,6 +1,8 @@
 import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
+import path from 'path';
+import { fileURLToPath } from 'url';
 import { connectDb } from './db.js';
 import authRouter from './routes/auth.js';
 import habitsRouter from './routes/habits.js';
@@ -13,9 +15,16 @@ const app = express();
 const PORT = process.env.PORT || 3001;
 const CLIENT_ORIGIN = process.env.CLIENT_ORIGIN || 'http://localhost:5000';
 
+// ES modules - get __dirname equivalent
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
 // Middleware
 app.use(cors({ origin: CLIENT_ORIGIN }));
 app.use(express.json({ limit: '10mb' }));
+
+// Serve static React build files
+app.use(express.static(path.join(__dirname, '../dist')));
 
 // Routes
 app.use('/api/auth', authRouter);
@@ -27,6 +36,11 @@ app.use('/api/journal', journalRouter);
 
 // Health check
 app.get('/api/health', (_req, res) => res.json({ status: 'ok' }));
+
+// Serve React app for all non-API routes (SPA fallback)
+app.get('*', (_req, res) => {
+  res.sendFile(path.join(__dirname, '../dist/index.html'));
+});
 
 // 404 handler
 app.use((req, res) => {
