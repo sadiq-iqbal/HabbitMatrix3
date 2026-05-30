@@ -7,6 +7,7 @@ interface GridCellProps {
     completed: boolean;
     expected: boolean;
     focused: boolean;
+    disabled?: boolean;
     color: string;
     row: number;
     col: number;
@@ -19,16 +20,17 @@ const GridCell = memo(function GridCell({
     completed,
     expected,
     focused,
+    disabled,
     color,
     row,
     col,
     onToggle,
 }: GridCellProps) {
     const handleClick = useCallback(() => {
-        if (expected) {
+        if (expected && !disabled) {
             onToggle(habitId, date);
         }
-    }, [habitId, date, expected, onToggle]);
+    }, [habitId, date, expected, disabled, onToggle]);
 
     if (!expected) {
         return (
@@ -82,10 +84,11 @@ const GridCell = memo(function GridCell({
                     </div>
                 ) : (
                     <div
-                        className="w-6 h-6 rounded-md border-2 transition-all duration-200 hover:scale-110"
+                        className={`w-6 h-6 rounded-md border-2 transition-all duration-200 ${!disabled ? 'hover:scale-110' : ''}`}
                         style={{
-                            borderColor: 'var(--border-default)',
-                            backgroundColor: 'transparent',
+                            borderColor: disabled ? 'var(--border-subtle)' : 'var(--border-default)',
+                            backgroundColor: disabled ? 'var(--bg-app)' : 'transparent',
+                            opacity: disabled ? 0.5 : 1,
                         }}
                     />
                 )}

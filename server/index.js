@@ -1,3 +1,4 @@
+import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
 import { connectDb } from './db.js';
@@ -6,6 +7,7 @@ import habitsRouter from './routes/habits.js';
 import entriesRouter from './routes/entries.js';
 import settingsRouter from './routes/settings.js';
 import dataRouter from './routes/data.js';
+import journalRouter from './routes/journal.js';
 
 const app = express();
 const PORT = 3001;
@@ -18,6 +20,7 @@ app.use('/api/habits', habitsRouter);
 app.use('/api/entries', entriesRouter);
 app.use('/api/settings', settingsRouter);
 app.use('/api/data', dataRouter);
+app.use('/api/journal', journalRouter);
 
 app.get('/api/health', (_req, res) => res.json({ status: 'ok' }));
 

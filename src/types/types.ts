@@ -77,3 +77,32 @@ export interface HabitStats {
 
 // ── View Types ──
 export type ViewMode = 'grid' | 'analytics';
+
+// ── Analytics Enhanced Types ──
+export interface DayOfWeekData {
+    day: string;
+    completionRate: number;
+}
+
+export interface Insight {
+    id: string;
+    type: 'positive' | 'warning' | 'neutral';
+    message: string;
+}
+
+// ── Journal Types ──
+export type EnergyLevel = 'low' | 'medium' | 'high';
+
+export interface JournalEntry {
+    date: string;         // YYYY-MM-DD
+    mood: number;         // 1-5
+    energyLevel: EnergyLevel;
+    note: string;
+}
+
+export interface MoodTrendPoint {
+    date: string;
+    mood: number | null;
+    completionRate: number;
+    note?: string;
+}

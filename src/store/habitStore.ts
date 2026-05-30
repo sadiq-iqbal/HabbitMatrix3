@@ -5,8 +5,10 @@ import type {
     Settings,
     FrequencyConfig,
     ViewMode,
+    JournalEntry,
 } from '@/types/types';
 import { habitsApi, entriesApi, settingsApi, dataApi } from '@/lib/api';
+import { journalApi } from '@/lib/journalApi';
 import { getDefaultState } from '@/lib/storage';
 import { format, addDays } from 'date-fns';
 
@@ -15,6 +17,7 @@ interface HabitStore {
     habits: Habit[];
     entries: HabitEntry[];
     settings: Settings;
+    journalEntries: JournalEntry[];
     viewMode: ViewMode;
     loading: boolean;
     error: string | null;
@@ -31,6 +34,9 @@ interface HabitStore {
 
     // ── Entry Actions ──
     toggleEntry: (habitId: string, date: string) => Promise<void>;
+
+    // ── Journal Actions ──
+    saveJournalEntry: (entry: Omit<JournalEntry, 'note'> & { note?: string }) => Promise<void>;
 
     // ── Settings Actions ──
     setTheme: (theme: 'light' | 'dark') => Promise<void>;
@@ -49,6 +55,7 @@ export const useHabitStore = create<HabitStore>((set, get) => ({
     habits: defaults.habits,
     entries: defaults.entries,
     settings: defaults.settings,
+    journalEntries: [],
     viewMode: 'grid' as ViewMode,
     loading: true,
     error: null,
@@ -56,12 +63,13 @@ export const useHabitStore = create<HabitStore>((set, get) => ({
     // ── Bootstrap: load all data from server ──
     init: async () => {
         try {
-            const [habits, entries, settings] = await Promise.all([
+            const [habits, entries, settings, journalEntries] = await Promise.all([
                 habitsApi.list(),
                 entriesApi.list(),
                 settingsApi.get(),
+                journalApi.list(),
             ]);
-            set({ habits, entries, settings, loading: false, error: null });
+            set({ habits, entries, settings, journalEntries, loading: false, error: null });
         } catch (err) {
             console.error('[HabitMatrix] Failed to load data from server:', err);
             set({ loading: false, error: 'Could not connect to server' });
@@ -177,6 +185,20 @@ export const useHabitStore = create<HabitStore>((set, get) => ({
             set({ entries: prevEntries });
             throw err;
         }
+    },
+
+    // ── Journal ──
+    saveJournalEntry: async (entry) => {
+        const saved = await journalApi.upsert(entry);
+        set((state) => {
+            const idx = state.journalEntries.findIndex((j) => j.date === saved.date);
+            if (idx !== -1) {
+                const updated = [...state.journalEntries];
+                updated[idx] = saved;
+                return { journalEntries: updated };
+            }
+            return { journalEntries: [...state.journalEntries, saved] };
+        });
     },
 
     // ── Settings ──

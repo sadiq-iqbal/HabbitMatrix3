@@ -55,3 +55,14 @@ const settingsSchema = new mongoose.Schema({
 export const Habit = mongoose.model('Habit', habitSchema);
 export const Entry = mongoose.model('Entry', entrySchema);
 export const Settings = mongoose.model('Settings', settingsSchema);
+
+const journalSchema = new mongoose.Schema({
+    userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+    date: { type: String, required: true },          // YYYY-MM-DD
+    mood: { type: Number, min: 1, max: 5, required: true },
+    energyLevel: { type: String, enum: ['low', 'medium', 'high'], required: true },
+    note: { type: String, default: '' },
+});
+journalSchema.index({ userId: 1, date: 1 }, { unique: true });
+
+export const JournalEntry = mongoose.model('JournalEntry', journalSchema);

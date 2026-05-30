@@ -1,10 +1,11 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useHabitStore } from '@/store/habitStore';
 import { useAuthStore } from '@/store/authStore';
 import Sidebar from '@/components/Sidebar';
 import HabitGrid from '@/components/grid/HabitGrid';
 import AnalyticsDashboard from '@/components/analytics/AnalyticsDashboard';
 import AuthPage from '@/components/auth/AuthPage';
+import { Menu, Layers } from 'lucide-react';
 
 export default function App() {
     const theme = useHabitStore((s) => s.settings.theme);
@@ -12,6 +13,8 @@ export default function App() {
     const loading = useHabitStore((s) => s.loading);
     const error = useHabitStore((s) => s.error);
     const init = useHabitStore((s) => s.init);
+
+    const [sidebarOpen, setSidebarOpen] = useState(false);
 
     const { user, authLoading, token, initAuth } = useAuthStore();
 
@@ -88,11 +91,46 @@ export default function App() {
 
     return (
         <div
-            className="flex h-screen w-screen overflow-hidden"
+            className="flex h-screen w-screen overflow-hidden flex-col md:flex-row"
             style={{ backgroundColor: 'var(--bg-app)', color: 'var(--text-primary)' }}
         >
-            <Sidebar />
-            <main className="flex-1 overflow-hidden flex flex-col">
+            {/* Mobile Header */}
+            <div 
+                className="md:hidden flex items-center justify-between p-4 border-b shrink-0" 
+                style={{ borderColor: 'var(--border-default)', backgroundColor: 'var(--bg-sidebar)' }}
+            >
+                <div className="flex items-center gap-2.5">
+                    <div 
+                        className="w-8 h-8 rounded-lg flex items-center justify-center" 
+                        style={{ background: 'linear-gradient(135deg, #6366f1, #8b5cf6)' }}
+                    >
+                        <Layers className="w-4 h-4 text-white" />
+                    </div>
+                    <span className="font-bold text-lg leading-tight">Habit Matrix</span>
+                </div>
+                <button onClick={() => setSidebarOpen(true)} className="p-2 -mr-2 cursor-pointer">
+                    <Menu className="w-6 h-6" />
+                </button>
+            </div>
+
+            {/* Mobile Sidebar Overlay */}
+            {sidebarOpen && (
+                <div 
+                    className="fixed inset-0 z-40 bg-black/50 md:hidden animate-fade-in"
+                    onClick={() => setSidebarOpen(false)}
+                />
+            )}
+
+            {/* Sidebar Container */}
+            <div 
+                className={`fixed inset-y-0 left-0 z-50 h-full transform transition-transform duration-300 ease-in-out md:relative md:translate-x-0 ${
+                    sidebarOpen ? 'translate-x-0' : '-translate-x-full'
+                }`}
+            >
+                <Sidebar onClose={() => setSidebarOpen(false)} />
+            </div>
+
+            <main className="flex-1 overflow-hidden flex flex-col min-w-0 w-full relative">
                 {viewMode === 'grid' ? <HabitGrid /> : <AnalyticsDashboard />}
             </main>
         </div>

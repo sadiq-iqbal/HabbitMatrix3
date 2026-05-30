@@ -1,10 +1,12 @@
 import { useState } from 'react';
+import { format } from 'date-fns';
 import { useHabitStore } from '@/store/habitStore';
 import { useAuthStore } from '@/store/authStore';
 import { exportAsJSON, exportAsCSV } from '@/lib/storage';
 import { entriesToCSV } from '@/lib/utils';
 import HabitModal from '@/components/modals/HabitModal';
 import ImportExportModal from '@/components/modals/ImportExportModal';
+import JournalModal from '@/components/modals/JournalModal';
 import {
     LayoutGrid,
     BarChart3,
@@ -15,11 +17,22 @@ import {
     Upload,
     Layers,
     LogOut,
+    BookOpen,
+    X,
 } from 'lucide-react';
 
-export default function Sidebar() {
+interface SidebarProps {
+    onClose?: () => void;
+}
+
+export default function Sidebar({ onClose }: SidebarProps) {
     const [showAddModal, setShowAddModal] = useState(false);
     const [showImportModal, setShowImportModal] = useState(false);
+    const [showJournalModal, setShowJournalModal] = useState(false);
+
+    const today = format(new Date(), 'yyyy-MM-dd');
+    const journalEntries = useHabitStore((s) => s.journalEntries);
+    const hasCheckedInToday = journalEntries.some((j) => j.date === today);
 
     const { user, logout } = useAuthStore();
     const viewMode = useHabitStore((s) => s.viewMode);
@@ -45,14 +58,14 @@ export default function Sidebar() {
     return (
         <>
             <aside
-                className="w-64 flex flex-col border-r shrink-0 animate-fade-in"
+                className="w-64 h-full flex flex-col border-r shrink-0 animate-fade-in"
                 style={{
                     backgroundColor: 'var(--bg-sidebar)',
                     borderColor: 'var(--border-default)',
                 }}
             >
                 {/* ── Logo ── */}
-                <div className="p-5 border-b" style={{ borderColor: 'var(--border-default)' }}>
+                <div className="p-5 border-b flex items-center justify-between" style={{ borderColor: 'var(--border-default)' }}>
                     <div className="flex items-center gap-2.5">
                         <div
                             className="w-9 h-9 rounded-xl flex items-center justify-center"
@@ -71,13 +84,21 @@ export default function Sidebar() {
                             </p>
                         </div>
                     </div>
+                    {onClose && (
+                        <button onClick={onClose} className="md:hidden p-1 rounded-lg" style={{ color: 'var(--text-muted)' }}>
+                            <X className="w-5 h-5" />
+                        </button>
+                    )}
                 </div>
 
                 {/* ── Navigation ── */}
-                <nav className="flex-1 p-3 flex flex-col gap-1">
+                <nav className="flex-1 p-3 flex flex-col gap-1 overflow-y-auto">
                     <button
                         id="nav-grid"
-                        onClick={() => setViewMode('grid')}
+                        onClick={() => {
+                            setViewMode('grid');
+                            onClose?.();
+                        }}
                         className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 cursor-pointer"
                         style={{
                             backgroundColor: viewMode === 'grid' ? 'var(--check-bg)' : 'transparent',
@@ -101,7 +122,10 @@ export default function Sidebar() {
 
                     <button
                         id="nav-analytics"
-                        onClick={() => setViewMode('analytics')}
+                        onClick={() => {
+                            setViewMode('analytics');
+                            onClose?.();
+                        }}
                         className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 cursor-pointer"
                         style={{
                             backgroundColor: viewMode === 'analytics' ? 'var(--check-bg)' : 'transparent',
@@ -125,6 +149,29 @@ export default function Sidebar() {
                     >
                         <Plus className="w-4.5 h-4.5" />
                         <span>Add Habit</span>
+                    </button>
+
+                    {/* ── Daily Journal Check-In Button ── */}
+                    <button
+                        id="journal-checkin-btn"
+                        onClick={() => setShowJournalModal(true)}
+                        className="flex items-center gap-3 px-3 py-2.5 mt-2 rounded-xl text-sm font-semibold transition-all duration-200 cursor-pointer relative"
+                        style={{
+                            background: hasCheckedInToday
+                                ? 'linear-gradient(135deg, #22c55e, #16a34a)'
+                                : 'linear-gradient(135deg, #10b98122, #22c55e22)',
+                            color: hasCheckedInToday ? 'white' : '#16a34a',
+                            border: hasCheckedInToday ? 'none' : '1.5px solid #22c55e66',
+                        }}
+                    >
+                        <BookOpen className="w-4.5 h-4.5" />
+                        <span>{hasCheckedInToday ? '✓ Checked In' : "Today's Check-In"}</span>
+                        {!hasCheckedInToday && (
+                            <span
+                                className="ml-auto w-2 h-2 rounded-full animate-pulse"
+                                style={{ backgroundColor: '#22c55e' }}
+                            />
+                        )}
                     </button>
 
                     {/* ── Stats Summary ── */}
@@ -230,6 +277,9 @@ export default function Sidebar() {
             )}
             {showImportModal && (
                 <ImportExportModal onClose={() => setShowImportModal(false)} />
+            )}
+            {showJournalModal && (
+                <JournalModal onClose={() => setShowJournalModal(false)} />
             )}
         </>
     );

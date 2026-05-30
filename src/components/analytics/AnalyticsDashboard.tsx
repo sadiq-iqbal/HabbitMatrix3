@@ -1,16 +1,29 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { useHabitStore } from '@/store/habitStore';
-import { getHabitStats, getDailyTrend, generateHeatmapData } from '@/lib/analytics';
+import {
+    getHabitStats,
+    getDailyTrend,
+    generateHeatmapData,
+    getCompletionByDayOfWeek,
+    getInsights,
+    getMoodTrend,
+} from '@/lib/analytics';
 import StatCard from './StatCard';
 import CompletionChart from './CompletionChart';
 import TrendChart from './TrendChart';
 import HeatmapCalendar from './HeatmapCalendar';
-import { Flame, Target, TrendingUp, Trophy } from 'lucide-react';
+import InsightsPanel from './InsightsPanel';
+import DayOfWeekChart from './DayOfWeekChart';
+import MoodTrendChart from './MoodTrendChart';
+import { Flame, Target, TrendingUp, Trophy, ChevronDown } from 'lucide-react';
 
 export default function AnalyticsDashboard() {
     const habits = useHabitStore((s) => s.habits);
     const entries = useHabitStore((s) => s.entries);
     const settings = useHabitStore((s) => s.settings);
+    const journalEntries = useHabitStore((s) => s.journalEntries);
+
+    const [selectedHabitId, setSelectedHabitId] = useState<string | null>(null);
 
     const activeHabits = useMemo(() => habits.filter((h) => !h.archived), [habits]);
 
@@ -25,15 +38,29 @@ export default function AnalyticsDashboard() {
     );
 
     const heatmapData = useMemo(
-        () => generateHeatmapData(entries, null, new Date().getFullYear()),
-        [entries]
+        () => generateHeatmapData(entries, selectedHabitId, new Date().getFullYear()),
+        [entries, selectedHabitId]
     );
 
-    // Aggregate stats
+    const dayOfWeekData = useMemo(
+        () => getCompletionByDayOfWeek(entries, habits, settings.startDate, settings.endDate),
+        [entries, habits, settings.startDate, settings.endDate]
+    );
+
+    const insights = useMemo(
+        () => getInsights(habits, entries, settings.startDate, settings.endDate),
+        [habits, entries, settings.startDate, settings.endDate]
+    );
+
+    const moodTrend = useMemo(
+        () => getMoodTrend(journalEntries, trendData),
+        [journalEntries, trendData]
+    );
+
+    // Aggregate stat card values
     const overallCompletion = useMemo(() => {
         if (stats.length === 0) return 0;
-        const total = stats.reduce((sum, s) => sum + s.completionRate, 0);
-        return Math.round(total / stats.length);
+        return Math.round(stats.reduce((sum, s) => sum + s.completionRate, 0) / stats.length);
     }, [stats]);
 
     const bestStreak = useMemo(() => {
@@ -50,6 +77,18 @@ export default function AnalyticsDashboard() {
         () => entries.filter((e) => e.completed).length,
         [entries]
     );
+
+    const avgMood = useMemo(() => {
+        const withMood = journalEntries.filter((j) => j.mood);
+        if (withMood.length === 0) return null;
+        const avg = withMood.reduce((sum, j) => sum + j.mood, 0) / withMood.length;
+        return avg.toFixed(1);
+    }, [journalEntries]);
+
+    const MOOD_EMOJIS: Record<string, string> = {
+        '1': '😴', '2': '😔', '3': '🙂', '4': '😊', '5': '🔥',
+    };
+    const moodEmoji = avgMood ? (MOOD_EMOJIS[String(Math.round(Number(avgMood)))] ?? '🙂') : null;
 
     if (activeHabits.length === 0) {
         return (
@@ -75,6 +114,7 @@ export default function AnalyticsDashboard() {
     return (
         <div className="flex-1 overflow-y-auto p-6">
             <div className="max-w-5xl mx-auto">
+
                 {/* Header */}
                 <div className="mb-6">
                     <h2 className="text-2xl font-extrabold mb-1" style={{ color: 'var(--text-primary)' }}>
@@ -84,6 +124,9 @@ export default function AnalyticsDashboard() {
                         Your habit performance insights
                     </p>
                 </div>
+
+                {/* ── Smart Insights ── */}
+                <InsightsPanel insights={insights} />
 
                 {/* ── Stat Cards ── */}
                 <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
@@ -98,6 +141,8 @@ export default function AnalyticsDashboard() {
                         value={`${currentBestStreak}d`}
                         icon={<Flame className="w-5 h-5" />}
                         color="#f97316"
+                        trend={currentBestStreak >= 3 ? 'up' : currentBestStreak === 0 ? 'down' : 'neutral'}
+                        trendValue={currentBestStreak >= 3 ? `${currentBestStreak} days!` : undefined}
                     />
                     <StatCard
                         label="Longest Streak Ever"
@@ -105,22 +150,67 @@ export default function AnalyticsDashboard() {
                         icon={<Trophy className="w-5 h-5" />}
                         color="#eab308"
                     />
-                    <StatCard
-                        label="Total Completions"
-                        value={totalCompletions}
-                        icon={<TrendingUp className="w-5 h-5" />}
-                        color="#22c55e"
-                    />
+                    {avgMood ? (
+                        <StatCard
+                            label="Avg. Mood Score"
+                            value={`${moodEmoji} ${avgMood}`}
+                            icon={<span className="text-lg">📖</span>}
+                            color="#22c55e"
+                            subtitle={`${journalEntries.length} check-ins logged`}
+                        />
+                    ) : (
+                        <StatCard
+                            label="Total Completions"
+                            value={totalCompletions}
+                            icon={<TrendingUp className="w-5 h-5" />}
+                            color="#22c55e"
+                        />
+                    )}
                 </div>
 
-                {/* ── Charts Grid ── */}
+                {/* ── Charts Row 1 ── */}
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
                     <CompletionChart stats={stats} />
-                    <TrendChart data={trendData} />
+                    <DayOfWeekChart data={dayOfWeekData} />
                 </div>
 
-                {/* ── Heatmap ── */}
+                {/* ── Trend + Mood Charts ── */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
+                    <TrendChart data={trendData} />
+                    <MoodTrendChart data={moodTrend} />
+                </div>
+
+                {/* ── Heatmap with habit filter ── */}
                 <div className="mb-6">
+                    {/* Filter selector */}
+                    <div className="flex items-center justify-between mb-3">
+                        <span className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>
+                            Activity Heatmap
+                        </span>
+                        <div className="relative">
+                            <select
+                                value={selectedHabitId ?? ''}
+                                onChange={(e) => setSelectedHabitId(e.target.value || null)}
+                                className="appearance-none pr-7 pl-3 py-1.5 rounded-xl text-xs font-medium border focus:outline-none cursor-pointer"
+                                style={{
+                                    backgroundColor: 'var(--bg-card)',
+                                    borderColor: 'var(--border-default)',
+                                    color: 'var(--text-primary)',
+                                }}
+                            >
+                                <option value="">All Habits</option>
+                                {activeHabits.map((h) => (
+                                    <option key={h.id} value={h.id}>
+                                        {h.name}
+                                    </option>
+                                ))}
+                            </select>
+                            <ChevronDown
+                                className="w-3.5 h-3.5 absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none"
+                                style={{ color: 'var(--text-muted)' }}
+                            />
+                        </div>
+                    </div>
                     <HeatmapCalendar data={heatmapData} year={new Date().getFullYear()} />
                 </div>
 
@@ -141,18 +231,10 @@ export default function AnalyticsDashboard() {
                     <table className="w-full">
                         <thead>
                             <tr style={{ backgroundColor: 'var(--bg-header)' }}>
-                                <th className="text-left px-5 py-2.5 text-xs font-semibold" style={{ color: 'var(--text-muted)' }}>
-                                    Habit
-                                </th>
-                                <th className="text-right px-4 py-2.5 text-xs font-semibold" style={{ color: 'var(--text-muted)' }}>
-                                    Completion
-                                </th>
-                                <th className="text-right px-4 py-2.5 text-xs font-semibold" style={{ color: 'var(--text-muted)' }}>
-                                    Current Streak
-                                </th>
-                                <th className="text-right px-5 py-2.5 text-xs font-semibold" style={{ color: 'var(--text-muted)' }}>
-                                    Best Streak
-                                </th>
+                                <th className="text-left px-5 py-2.5 text-xs font-semibold" style={{ color: 'var(--text-muted)' }}>Habit</th>
+                                <th className="text-right px-4 py-2.5 text-xs font-semibold" style={{ color: 'var(--text-muted)' }}>Completion</th>
+                                <th className="text-right px-4 py-2.5 text-xs font-semibold" style={{ color: 'var(--text-muted)' }}>Current Streak</th>
+                                <th className="text-right px-5 py-2.5 text-xs font-semibold" style={{ color: 'var(--text-muted)' }}>Best Streak</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -178,10 +260,7 @@ export default function AnalyticsDashboard() {
                                             <div className="w-16 h-1.5 rounded-full" style={{ backgroundColor: 'var(--border-default)' }}>
                                                 <div
                                                     className="h-full rounded-full transition-all duration-500"
-                                                    style={{
-                                                        width: `${stat.completionRate}%`,
-                                                        backgroundColor: stat.color,
-                                                    }}
+                                                    style={{ width: `${stat.completionRate}%`, backgroundColor: stat.color }}
                                                 />
                                             </div>
                                             <span className="text-xs font-semibold w-10 text-right" style={{ color: 'var(--text-secondary)' }}>

@@ -1,11 +1,15 @@
 import { useMemo, useCallback, useState, useRef, useEffect } from 'react';
+import { format } from 'date-fns';
 import { useHabitStore } from '@/store/habitStore';
 import { getDateRange, isHabitExpectedOnDate } from '@/lib/utils';
+import { Plus } from 'lucide-react';
 import GridCell from './GridCell';
 import DateNavigator from './DateNavigator';
 import HabitRowHeader, { DateHeaderRow } from './GridHeader';
+import HabitModal from '@/components/modals/HabitModal';
 
 export default function HabitGrid() {
+    const today = format(new Date(), 'yyyy-MM-dd');
     const habits = useHabitStore((s) => s.habits);
     const entries = useHabitStore((s) => s.entries);
     const settings = useHabitStore((s) => s.settings);
@@ -35,6 +39,7 @@ export default function HabitGrid() {
     // Keyboard navigation state — now row = habit index, col = date index
     const [focusRow, setFocusRow] = useState(0);
     const [focusCol, setFocusCol] = useState(0);
+    const [showAddModal, setShowAddModal] = useState(false);
     const gridRef = useRef<HTMLDivElement>(null);
 
     const handleKeyDown = useCallback(
@@ -114,7 +119,7 @@ export default function HabitGrid() {
                 onKeyDown={handleKeyDown}
             >
                 <table
-                    className="border-collapse w-full"
+                    className="border-collapse w-max min-w-full"
                     style={{ tableLayout: 'fixed' }}
                 >
                     {/* ── Date Header Row (dates as columns) ── */}
@@ -144,6 +149,7 @@ export default function HabitGrid() {
                                             completed={isCompleted}
                                             expected={isExpected}
                                             focused={isFocused}
+                                            disabled={date !== today}
                                             color={habit.color}
                                             row={rowIdx}
                                             col={colIdx}
@@ -156,6 +162,17 @@ export default function HabitGrid() {
                     </tbody>
                 </table>
             </div>
+
+            {/* ── Mobile FAB ── */}
+            <button
+                onClick={() => setShowAddModal(true)}
+                className="md:hidden fixed bottom-6 right-6 w-14 h-14 bg-indigo-500 text-white rounded-full flex items-center justify-center shadow-[0_4px_20px_rgba(99,102,241,0.4)] hover:bg-indigo-600 hover:scale-105 active:scale-95 transition-all z-40"
+            >
+                <Plus className="w-6 h-6" strokeWidth={2.5} />
+            </button>
+
+            {/* ── Add Habit Modal ── */}
+            {showAddModal && <HabitModal onClose={() => setShowAddModal(false)} />}
         </div>
     );
 }
