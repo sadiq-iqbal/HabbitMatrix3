@@ -46,7 +46,7 @@ app.use((err, req, res, next) => {
 // Database connection and server startup
 connectDb()
   .then(() => {
-    const server = app.listen(PORT, 'localhost', () => {
+    const server = app.listen(PORT, '0.0.0.0', () => {
       console.log(`[server] Express API running at http://localhost:${PORT}`);
     });
 
