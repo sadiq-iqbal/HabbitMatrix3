@@ -37,16 +37,6 @@ app.use('/api/journal', journalRouter);
 // Health check
 app.get('/api/health', (_req, res) => res.json({ status: 'ok' }));
 
-// Serve React app for all non-API routes (SPA fallback)
-app.get('*', (_req, res) => {
-  res.sendFile(path.join(__dirname, '../dist/index.html'));
-});
-
-// 404 handler
-app.use((req, res) => {
-  res.status(404).json({ error: 'Not Found' });
-});
-
 // Error handling middleware
 app.use((err, req, res, next) => {
   console.error(err);
@@ -55,6 +45,11 @@ app.use((err, req, res, next) => {
       ? 'Internal Server Error' 
       : err.message 
   });
+});
+
+// Serve React app for all non-API routes (SPA fallback) - MUST be last
+app.use((req, res) => {
+  res.sendFile(path.join(__dirname, '../dist/index.html'));
 });
 
 // Database connection and server startup
